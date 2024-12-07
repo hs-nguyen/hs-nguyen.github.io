@@ -1,0 +1,113 @@
+[
+{
+	"uri": "http://localhost:1313/1.introduction/",
+	"title": "Introduction",
+	"tags": [],
+	"description": "",
+	"content": "Amazon VPC you can launch AWS resources in a logically isolated virtual network that you\u0026rsquo;ve defined. This virtual network closely resembles a traditional network that you\u0026rsquo;d operate in your own data center, with the benefits of using the scalable infrastructure of AWS. Amazon ELB is a service load balancer routing traffic to targets (EC2 instance, containers, IP address, lambda functions) based on the content of the request. Amazon ECR is an AWS managed container image registry service that is secure, scalable, and reliable. Amazon ECR supports private repositories with resource-based permissions using AWS IAM. This is so that specified users or Amazon EC2 instances can access your container repositories and images. Amazon ECS is a fully managed container orchestration service that helps you easily deploy, manage, and scale containerized applications. As a fully managed service, Amazon ECS comes with AWS configuration and operational best practices built-in. Amazon Route 53 is a highly available and scalable Domain Name System (DNS) web service. You can use Route 53 to perform three main functions in any combination: domain registration, DNS routing, and health checking. AWS Certificate Manager handles the complexity of creating, storing, and renewing public and private SSL/TLS X.509 certificates and keys that protect your AWS websites and applications. "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.1-createvpc/",
+	"title": "Create VPC",
+	"tags": [],
+	"description": "",
+	"content": " Click Your VPC =\u0026gt; Create VPC Resource to create: VPC and more Auto-generate: Check Name: d-vpc-01 Ipv4 CIDR block: 10.0.0.0/16 Number of public subnets: 2 Number of private subnets: 2 Customize subnets CIDR blocks Public subnets CIDR blocks in ap-southeast-1a: 10.0.0.0/24 Public subnets CIDR blocks in ap-southeast-1b: 10.0.2.0/24 Private subnets CIDR blocks in ap-southeast-1a: 10.0.1.0/24 Private subnets CIDR blocks in ap-southeast-1b: 10.0.3.0/24 NAT gateways: In 1 AZ VPC endpoints: S3 gateway Preview VPC Completed VPC "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.2-create-security-group-ec2/",
+	"title": "Create Security Group-EC2",
+	"tags": [],
+	"description": "",
+	"content": "Create Security Group Security group is a type of virtual firewall that can allow traffic flows from outside the internet to access resources in the cloud. We will create security group for EC2 (Bastion-host) Click Create a Security Group Security Group name: d-sg-bastion-host Description: Allow ssh from internet VPC: d-vpc-01-vpc (Specify VPC for SG) Inbound rules Type: SSH Protocol: TCP Port range: 22 Source: Anywhere Description: allows ssh from internet Completed Security Group for EC2 Launch EC2 (Bastion-host) Create EC2 so you can pull source code from Git Hub and push docker images to AWS ECR. Name and tags Key: Name Value: d-ec2-bastion-host Resource types: Instance Amazon machine images: Amazon Linux 2023 AMI Instance type: t2.micro Key pair (login): linux.aws-test Network settings VPC: d-vpc-01-vpc Subnet: d-vpc-01-subnet-public-ap-southeast-1a Auto assign public IP: Enable Firewall (security group): Select existing security group Common security group: d-sg-bastion-host Click Launch instance Modify IAM role for EC2(Bastion-host) Click EC2 =\u0026gt; Action =\u0026gt; Security =\u0026gt; Modify IAM role Modify IAM role Instance ID: d-ec2-bastion-host IAM role: IAM-role-allow-EC2-Access-to-ECR Update IAM role "
+},
+{
+	"uri": "http://localhost:1313/2.preparation/",
+	"title": "Preparation",
+	"tags": [],
+	"description": "",
+	"content": "Prepare AWS environment and IAM user has full permission to access another resource in the console. Source code https://github.com/hs-nguyen/Host-a-Static-Web-App-on-AWS-with-Docker-and-AWS-ECS.git\nRegister domain name at Route 53\nHere, domain name: cloud-sangnguyen.click To EC2 instance to be able to work with AWS ECR, we need to give permission to our instance.\nIn this preparation, we need to create IAM role to grant to EC2 instance.\nIAM role Choose IAM on console Click Create role Trusted entity type: AWS Service Use case: EC2 Add permissions: “EC2InstanceProfileForImageBuilderECRContainerBuilds” Role name: IAM-role-allow-EC2-Access-to-ECR Preview IAM role =\u0026gt; Create role Confirm IAM role "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/",
+	"title": "Configuration",
+	"tags": [],
+	"description": "",
+	"content": "In this step, we will configure step by step.\nContent 3.1 VPC Setting\n3.2 Securiy group \u0026amp; EC2\n3.3 Connect To EC2\n3.4 Amazon ECR\u0026amp;ECS\n3.5 ECR Repository\n3.6 Task Definition\n3.7 Application Load Balancer\n3.8 Service in cluster\n3.9 Route 53\n"
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.3-connect-ec2/",
+	"title": "Connect EC2",
+	"tags": [],
+	"description": "",
+	"content": "Connect SSH to EC2 Install docker \u0026amp; git Follows Command line: sudo yum update sudo yum install git -y sudo yum install docker -y Check version Create Dockerfile, build Docker images, Docker container. Git clone source code: https://github.com/hs-nguyen/Host-a-Static-Web-App-on-AWS-with-Docker-and-AWS-ECS.git CLI: \u0026ldquo;Cd Host-a-Static-Web-App-on-AWS-with-Docker-and-AWS-ECS\u0026rdquo; Create Dockerfile FROM nginx:1.25.3 COPY ./ /usr/share/nginx/html EXPOSE 80 CMD [\u0026ldquo;nginx\u0026rdquo;, \u0026ldquo;-g\u0026rdquo;, \u0026ldquo;daemon off;\u0026rdquo;] Check Build Docker images \u0026amp; Docker container Follows CLI CLI: docker build -t web-app . (Build Docker images) CLI: docker run -d \u0026ndash;name web-app -p 8080:80 web-app (Run Docker container) CLI: docker ps-a (Check status container) Check Custom inbound rules for security group for EC2 Add inbound rules: Types: Custom TCP Protocol: TCP Port range: 8080 Source: Anywhere Access to Website through IP public EC2 "
+},
+{
+	"uri": "http://localhost:1313/4.clean-up-resources/",
+	"title": "Clean up resources",
+	"tags": [],
+	"description": "",
+	"content": "After completing this lab, we will need to delete all resources that were created before.\nDelete service in cluster In the ECS cluster Choose service: d-cluster-web-app Click Delete service Check Force delete Click Delete Delete cluster \u0026amp; task definition In ECS Choose cluster: d-ecs-web-app Click Delete cluster Type: delete d-ecs-web-app Click Delete Task definition In a Task Definition Choose: d-task-definition-web-app Actions: Deregister Click Deregister Delete ECR repository In the ECR repositories Choose: d-ecr-web-app Click: Delete Confirm Delete Delete Load Balancer In a Load Balancers Choose: d-alb-web-app Actions: Delete load balancer Type: Confirm Click Delete Delete Target group In a Target group Choose: d-tg-web-app Actions: Delete Click Yes,Delete Terminate EC2(Bastion-host) In an instances Choose: d-ec2-bastion-host Instance state: Terminate (delete) instance Delete VPC(NGW, IGW, Elastis IP, VPC) NAT gateways Name: d-vpc-01-nat-public-ap-southeast-1a Actions: Delete NAT gateway Type: delete Click Delete Detach Internet Gateways Name: d-vpc-01-igw Actions: Detach from VPC Click Detach internet gateway Release Elastic IP Name: d-vpc-01-eip-ap-southeast-1a Actions: Release Elastis IP addresses Click Release Delete VPC Name: d-vpc-01-vpc Actions: Delete VPC Confirm deletion Click Delete "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.4-create-ecrecs-cluster/",
+	"title": "Create ECR&amp;ECS cluster",
+	"tags": [],
+	"description": "",
+	"content": "Amazon Elastic Container Registry Create Repository Repository name: “d-ecr-web-app” Image tag mutability: Mutable Encryption configuration: “AES-256” =\u0026gt; Click Create Confirm Repositories Amazon Elastic Container Service Create cluster Cluster name: “d-ecs-web-app” Infrastructure: “AWS Fargate” =\u0026gt; Create Confirm Cluster "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.5-push-images/",
+	"title": "Push images in ECR repository",
+	"tags": [],
+	"description": "",
+	"content": " Connect to EC2 to push images in ECR repository Go back Repositories View push commands Follow CLI: Push images take about 1 - 2 minutes Check images at ECR Repositories "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.6-create-task-definition/",
+	"title": "Create Task Definition",
+	"tags": [],
+	"description": "",
+	"content": " Create a new task definition Task definition family: “d-task-definition-web-app” Infrastructure requirements: Launch type: AWS Fargate Operation system/ Architecture: Linux/x86_64 Network mode: awsvpc CPU: 1v CPU Memory: 3GB Task role: ecsTaskExcutionRole Container details: Name: web-app Images URI: (Copy URI images in ECR repositories) Essential Container: Yes Port mappings: Container port: 80 Protocol: TCP Port name: default App protocol: HTTP View Task definition "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.7-create-alb/",
+	"title": "Create target group &amp; ALB",
+	"tags": [],
+	"description": "",
+	"content": "Create a Target group Click \u0026ldquo;Create Target group\u0026rdquo; Choose a target type: IP address Protocol: HTTP IP Address: Ipv4 VPC: d-vpc-01-vpc Protocol version: HTTP1 IP Address Step 1: Choose a Network Network: d-vpc-01-vpc Step 2: Specify Ips and define port Enter an Ipv4 address from a VPC Subnet: “10.0.0.” Step 3: Review IP targets to include in your group =\u0026gt; create target group Create an Application Load Balancer Click \u0026ldquo;Create Load Balancer\u0026rdquo; Application load balancer =\u0026gt; Create Basic configuration Load balancer name: “d-alb-web-app” Scheme: Internet-facing Load balancer IP address type: Ipv4 Network mapping VPC: d-vpc-01-vpc AZ: specify at least two AZs and one subnet per zone Security group: “d-sg-alb-web-app” (add rule https 443 for sg-alb) Listener Configuration Protocol: HTTPS Port: 443 Forward to: “d-tg-web-app” Secure listener setting Security policy Security category: ALL security policies Policy name: default Default SSL/TLS server certificate Certificate source: From ACM Certificate (From ACM): cloud-sangnguyen.click Confirm Load Balancers "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.8-create-service-in-cluster/",
+	"title": "Create Service in Cluster",
+	"tags": [],
+	"description": "",
+	"content": " Create Service Environment Existing cluster: d-ecs-web-app Compute options: Launch type Launch type: AWS Fargate Platform version: Latest Deployment configuration Application type: Service Task definition Family: d-task-definition-web-app Revision: 3 (latest) Service name: d-cluster-web-app Service type: Replica Desired task: 2 Networking: VPC: d-vpc-01-vpc Subnet: Choose two private subnet Create a new security group for ecs cluster Security group name: d-sg-ecs-web-app Inbound rules for d-sg-ecs-web-app Type: All TCP Protocol: Default Port range: Default Source: Source Group Values: d-sg-alb-web-app (allow security group alb) Load balancing Optional Load balancer type: Application load balancer Container: web-app 80:80 Application load balancer: Use an existing load balancer Load balancer: “d-alb-web-app” Listener \u0026amp; target group Listener: 80:HTTP Target group name: d-tg-web-app View running service at CloudFormation Running services completed Test Web Application "
+},
+{
+	"uri": "http://localhost:1313/3.configuration/3.9-create-record-route-53/",
+	"title": "Create record Route 53",
+	"tags": [],
+	"description": "",
+	"content": "Create record Route 53 Click \u0026ldquo;Create record\u0026rdquo; Routing policy: Simple routing Click \u0026ldquo;Define simple record\u0026rdquo; Define simple record Value/Route traffic to Alias to Application and Classic Load Balancer Asia Pacific (Singapore) Choose Application Load Balancer Click \u0026ldquo;Define simple record\u0026rdquo; Configure records =\u0026gt; Click \u0026ldquo;Create records\u0026rdquo; Synchronization takes about 1 - 2 minutes Access Web App through DNS "
+},
+{
+	"uri": "http://localhost:1313/",
+	"title": "",
+	"tags": [],
+	"description": "",
+	"content": "Deploy a Web Application on AWS ECS Architecture Diagram How to deploy a web application on AWS ECS?\nThrough the lab, you understand about services and how to deploy on AWS environment.\nAWS Regions: Singapore\nTime to completed: 45 minutes\nServices used: VPC, ALB, ECR, ECS, ACM \u0026amp; Route 53.\nStep by Step Hands-on Introduction Preparation Configuration Clean up resources "
+},
+{
+	"uri": "http://localhost:1313/categories/",
+	"title": "Categories",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "http://localhost:1313/tags/",
+	"title": "Tags",
+	"tags": [],
+	"description": "",
+	"content": ""
+}]
